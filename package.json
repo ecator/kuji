@@ -1,0 +1,49 @@
+{
+  "name": "kuji",
+  "version": "0.0.1",
+  "description": "A minimal Electron application",
+  "main": "main/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build-win": "electron-builder -w",
+    "build-mac": "electron-builder -m"
+  },
+  "keywords": [
+    "Electron",
+    "lottery"
+  ],
+  "author": "Martin",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^11.0.3",
+    "electron-builder": "^22.9.1"
+  },
+  "build": {
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
+      "!**/{package.json,package-lock.json}",
+      "!config/*",
+      "!{.vscode/*,*.code-workspace}"
+    ],
+    "win": {
+      "target": "zip",
+      "icon": "assets/ico/lottery.ico"
+    },
+    "mac": {
+      "target": "zip",
+      "icon": "assets/ico/lottery.png"
+    }
+  }
+}
