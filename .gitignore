@@ -3,4 +3,6 @@ node_modules/
 config/
 dist/
 .vscode/
+TEST/
+renderer/
 *.code-workspace
