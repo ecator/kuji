@@ -4,6 +4,8 @@
 
 整个抽奖程序由一个内圆(r1)和围绕一圈的外圆(r2)组成，首先会滚动内圆，然后再滚动外圆，组合起来的一个`xx-yy`的数字就是最终的中奖号码。
 
+当然在当前启动时间内抽过的号码是不会被再次抽中的  :ghost:
+
 # 开发
 
 确保是最新的nodejs环境，然后运行下面命令安装依赖：
@@ -54,10 +56,10 @@ Windows的话解压后执行`kuji.exe`就可以了，mac的话直接运行解压
 [![](https://mermaid.ink/img/eyJjb2RlIjoiZ3JhcGggTFJcbiAgQVvliJ3lp4vnirbmgIFdXG4gIEJb5YaF5ZyGcjHmu5rliqhdXG4gIENb5aSW5ZyGcjLmu5rliqhdXG4gIERb5bGV56S657uT5p6cXVxuXG4gIEEtLT58c3BhY2V8QlxuICBCLS4tPnxhdXRvfENcbiAgQy0uLT58YXV0b3xEXG4gIEQtLT58c3BhY2V8QVxuXHRcdCIsIm1lcm1haWQiOnt9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoiZ3JhcGggTFJcbiAgQVvliJ3lp4vnirbmgIFdXG4gIEJb5YaF5ZyGcjHmu5rliqhdXG4gIENb5aSW5ZyGcjLmu5rliqhdXG4gIERb5bGV56S657uT5p6cXVxuXG4gIEEtLT58c3BhY2V8QlxuICBCLS4tPnxhdXRvfENcbiAgQy0uLT58YXV0b3xEXG4gIEQtLT58c3BhY2V8QVxuXHRcdCIsIm1lcm1haWQiOnt9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)
 
 - Ctrl+F12<br>
-调出控制台，用于调试程序。
+调出控制台，用于调试程序  :bug:
 
 - Ctrl+F<br>
-全屏和窗口模式之间切换
+全屏和窗口模式之间切换  :computer:
 
 - 数字键`0-9`<br>
 切换背景，默认是0号背景，可以自定义。
