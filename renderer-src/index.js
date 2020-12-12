@@ -100,6 +100,7 @@ function initKuji() {
                 exp: 2,
                 duration: 5000
             },
+            bgIdx: 1,
             status: STATUS_NORMAL,
             activeR1Title: '',
             activeR2Styles: [],
@@ -118,9 +119,7 @@ function initKuji() {
             this.r2.fontColorActive = config.read('r2', 'fontColorActive', this.r2.fontColorActive)
             this.r2.bgColor = config.read('r2', 'bgColor', this.r2.bgColor)
             this.r2.bgColorActive = config.read('r2', 'bgColorActive', this.r2.bgColorActive)
-            this.intervalFun.a = parseFloat(eval(config.read('intervalFun', 'a', this.intervalFun.a)))
-            this.intervalFun.exp = parseFloat(eval(config.read('intervalFun', 'exp', this.intervalFun.exp)))
-            this.intervalFun.duration = parseInt(parseFloat(eval(config.read('intervalFun', 'duration', this.intervalFun.duration / 1000))) * 1000)
+            this.bgIdx = 0
             this.width = this.computeSize()
             this.bukets = this.readBukets(INCLUDE_FILE_PATH)
             this.buketsChosen = this.readBukets(EXCLUDE_FILE_PATH)
@@ -153,6 +152,17 @@ function initKuji() {
                         this.drawRing()
                     }, 100)
                 }
+            },
+            bgIdx: function (newVal, oldVal) {
+                // 切换背景
+                bg.changeBg(config.read('bg', this.bgIdx, this.bgIdx + '.jpg'))
+                // 根据不同背景设定不同的时间函数参数
+                let a = parseFloat(eval(config.read('intervalFun', 'a', this.intervalFun.a)))
+                this.intervalFun.a = parseFloat(eval(config.read('intervalFun' + this.bgIdx, 'a', a)))
+                let exp = parseFloat(eval(config.read('intervalFun', 'exp', this.intervalFun.exp)))
+                this.intervalFun.exp = parseFloat(eval(config.read('intervalFun' + this.bgIdx, 'exp', exp)))
+                let duration = parseInt(parseFloat(eval(config.read('intervalFun', 'duration', this.intervalFun.duration / 1000))) * 1000)
+                this.intervalFun.duration = parseInt(parseFloat(eval(config.read('intervalFun' + this.bgIdx, 'duration', duration / 1000))) * 1000)
             }
         },
         methods: {
@@ -457,7 +467,7 @@ window.addEventListener('keyup', (event) => {
             case /^digit[0-9]$/.test(key) && key:
                 // 0-9 切换背景
                 let bgIndex = key.substr(-1)
-                bg.changeBg(config.read('bg', bgIndex, bgIndex + '.jpg'))
+                kuji.bgIdx = bgIndex
                 break
         }
     } else {
