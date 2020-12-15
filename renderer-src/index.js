@@ -100,6 +100,7 @@ function initKuji() {
                 exp: 2,
                 duration: 5000
             },
+            optionKey: 'tab',//触发开始抽奖的备用按键
             bgIdx: 1,
             status: STATUS_NORMAL,
             activeR1Title: '',
@@ -119,6 +120,7 @@ function initKuji() {
             this.r2.fontColorActive = config.read('r2', 'fontColorActive', this.r2.fontColorActive)
             this.r2.bgColor = config.read('r2', 'bgColor', this.r2.bgColor)
             this.r2.bgColorActive = config.read('r2', 'bgColorActive', this.r2.bgColorActive)
+            this.optionKey = config.read('flash', 'optionKey', this.optionKey)
             this.bgIdx = 0
             this.width = this.computeSize()
             this.bukets = this.readBukets(INCLUDE_FILE_PATH)
@@ -457,10 +459,11 @@ window.addEventListener('resize', function () {
 
 window.addEventListener('keyup', (event) => {
     let key = event.code.toLowerCase()
-    //console.log(key)
+    // console.log(key,event)
     if (!event.ctrlKey) {
         switch (key) {
             case 'space':
+            case kuji.optionKey:
                 // 开始抽签
                 runkuji()
                 break
