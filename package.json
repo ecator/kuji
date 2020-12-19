@@ -1,7 +1,7 @@
 {
   "name": "kuji",
-  "version": "0.3.1",
-  "description": "A minimal Electron application",
+  "version": "0.4.3",
+  "description": "A simple lottery application by Electron",
   "main": "main/main.js",
   "private": true,
   "scripts": {

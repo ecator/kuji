@@ -7,7 +7,7 @@
   </head>
   <body>
     <div id="kujiCanvasContainer">
-      <canvas :id="id" :width="width" :height="height"></canvas>
+      <canvas v-for="_id in ids" :id="_id" :width="width" :height="height"></canvas>
     </div>
     <script src="./renderer/index.js"></script>
   </body>

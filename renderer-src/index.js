@@ -1,17 +1,17 @@
 const originalFs = require('original-fs')
-const fs = require('fs')
 const path = require('path')
 const BackGround = require('./bg')
+const Gift = require('./gift')
 const Vue = require('vue')
 const Sound = require('./sound')
 const Config = require('./config')
-const { runInThisContext } = require('vm')
 require('./sass/index.scss')
 
 let kuji
 
 const CONF_PATH = path.join(process.env['HOME'] || process.env['USERPROFILE'], 'kuji')
 const BG_PATH = path.join(CONF_PATH, 'bg')
+const GIFT_PATH = path.join(CONF_PATH, 'gift')
 const SOUND_PATH = path.join(CONF_PATH, 'sound')
 if (!originalFs.existsSync(CONF_PATH)) {
     originalFs.mkdirSync(CONF_PATH)
@@ -39,7 +39,7 @@ if (!originalFs.existsSync(EXCLUDE_FILE_PATH)) {
 let sound = new Sound(SOUND_PATH)
 let config = new Config(INI_FILE)
 let bg = new BackGround(BG_PATH)
-
+let gift = new Gift(GIFT_PATH)
 
 /**
  * 根据状态执行抽签流程
@@ -56,8 +56,8 @@ function runkuji() {
             break
         case STATUS_SHOW_RESULT:
             // 中签结果显示（静止画面）-> 空白
-            kuji.clearCanvas()
             kuji.status = STATUS_NORMAL
+            kuji.drawImageAll()
             break
     }
 }
@@ -71,7 +71,8 @@ function initKuji() {
     kuji = new Vue({
         el: '#kujiCanvasContainer',
         data: {
-            id: 'kujiCanvas',
+            id: 'kujiCanvas1',
+            ids: ["kujiCanvas1"],
             width: 0,
             height: 0,
             r1: {
@@ -103,9 +104,11 @@ function initKuji() {
             optionKey: 'tab',//触发开始抽奖的备用按键
             bgIdx: 1,
             status: STATUS_NORMAL,
-            activeR1Title: '',
-            activeR2Styles: [],
-            activeR2Idx: -1,
+            activeR1Title: '', //当前内圆标题
+            activeR1Titles: [], //所有内圆标题
+            activeR2Styles: [], //当前外圆状态
+            activeR2Idx: -1, //当前外圆高亮ID
+            activeR2Idxs: [], //所有外圆高亮ID
             bukets: {},
             buketsChosen: {}
         },
@@ -139,6 +142,16 @@ function initKuji() {
                 }
             }
         },
+        updated() {
+            // console.log('updated')
+            if (this.status == STATUS_SHOW_RESULT) {
+                // 重绘展示界面
+                this.drawRingAll()
+            } else if (this.status == STATUS_NORMAL) {
+                // 重绘礼品图
+                this.drawImageAll()
+            }
+        },
         watch: {
             width: function (newVal, oldVal) {
                 this.coordinate.x = this.width / 2
@@ -148,12 +161,6 @@ function initKuji() {
             },
             height: function (newVal, oldVal) {
                 this.coordinate.y = this.height / 2
-                // 重绘展示界面
-                if (this.status == STATUS_SHOW_RESULT) {
-                    setTimeout(() => {
-                        this.drawRing()
-                    }, 100)
-                }
             },
             bgIdx: function (newVal, oldVal) {
                 // 切换背景
@@ -165,6 +172,17 @@ function initKuji() {
                 this.intervalFun.exp = parseFloat(eval(config.read('intervalFun' + this.bgIdx, 'exp', exp)))
                 let duration = parseInt(parseFloat(eval(config.read('intervalFun', 'duration', this.intervalFun.duration / 1000))) * 1000)
                 this.intervalFun.duration = parseInt(parseFloat(eval(config.read('intervalFun' + this.bgIdx, 'duration', duration / 1000))) * 1000)
+
+                // 刷新礼品图
+                if (this.status = STATUS_NORMAL) {
+                    this.drawImageAll()
+                }
+            },
+            ids: function (newVal, oldVal) {
+                if (this.status == STATUS_NORMAL) {
+                    // 重新计算宽度
+                    this.width = this.computeSize()
+                }
             }
         },
         methods: {
@@ -176,14 +194,22 @@ function initKuji() {
             computeSize() {
                 let width = document.body.clientWidth
                 let height = document.body.clientHeight
-                let size = (width < height ? width : height) * 0.8
+                let scale = 0
+                let idsCnt = this.ids.length
+                if (idsCnt <= 1) {
+                    scale = 0.8
+                } else if (idsCnt <= 3) {
+                    scale = 1 / idsCnt
+                } else {
+                    scale = 1 / 3
+                }
+                let size = (width < height ? width : height) * scale
                 return size
             },
 
             /**
-             *
              * 根据外周圆的个数计算出合适的外周圆半径
-             * @param {*} n
+             * @param {number} n
              * @returns {number} 
              */
             getSuitableR2(n) {
@@ -229,6 +255,32 @@ function initKuji() {
             },
 
             /**
+             * 获取剩余奖品最大数量
+             * @returns {number} 
+             */
+            getMaxKujiCount() {
+                let cnt = 0
+                for (let i in this.bukets) {
+                    cnt += this.bukets[i].length
+                }
+                return cnt
+            },
+
+            /**
+             * 绘制所有圆环
+             */
+            drawRingAll() {
+                for (let i = 0; i < this.ids.length; i++) {
+                    this.id = this.ids[i]
+                    this.activeR1Title = this.activeR1Titles[i]
+                    if (i < this.activeR2Idxs.length) {
+                        this.activeR2Idx = this.activeR2Idxs[i]
+                        this.genR2Styles()
+                    }
+                    this.drawRing()
+                }
+            },
+            /**
              * 根据当前状态画一个圆环
              */
             drawRing() {
@@ -264,6 +316,31 @@ function initKuji() {
             },
 
             /**
+             * 在所有画布绘制gift图片（初始状态）
+             */
+            drawImageAll() {
+                // 更换礼品图
+                for (let i of this.ids) {
+                    this.id = i
+                    this.drawImage()
+                }
+            },
+
+            /**
+             * 根据当前状态绘制gift图片（初始状态）
+             */
+            drawImage() {
+                let ctx = this.getCanvas()
+                this.clearCanvas()
+                let img = new Image()
+                img.src = gift.genUrl(config.read('gift', this.bgIdx, this.bgIdx + '.png'))
+                _this = this
+                img.onload = function () {
+                    ctx.drawImage(img, 0, 0, _this.width, _this.height)
+                }
+            },
+
+            /**
              * 返回2d上下文
              * @returns {CanvasRenderingContext2D} 
              */
@@ -285,21 +362,28 @@ function initKuji() {
              * 滚动效果
              */
             flash() {
+                this.activeR1Titles = []
+                this.activeR2Idxs = []
                 this.activeR2Idx = -1
                 this.genR2Styles()
                 let duration = this.intervalFun.duration
                 let flashR1 = new Promise((resolve, reject) => {
+
                     let titles = Object.keys(kuji.bukets).filter((item) => this.bukets[item].length > 0)
                     //console.log(titles)
                     n = titles.length
-                    if (n == 0) {
+                    if (this.ids.length > this.getMaxKujiCount()) {
                         this.status = STATUS_NORMAL
-                        reject("もう終わりましたよ（笑）")
+                        if (n == 0) {
+                            reject("もう終わりましたよ（笑）")
+                        } else {
+                            reject("参加者が足りません（涙）")
+                        }
                         return
                     }
                     let r1Duration = duration
-                    // 只剩一个的时候立即结束
-                    if (n == 1) {
+                    // 最大可供抽选的内圆数量刚好为抽选数量时立即结束
+                    if (n <= this.ids.length) {
                         r1Duration = 0
                     }
                     sound.play(config.read('sound', 'bg', 'bg.mp3'))
@@ -307,10 +391,14 @@ function initKuji() {
                 })
                 flashR1.then(() => {
                     return new Promise((resolve, reject) => {
-                        let titles = this.bukets[this.activeR1Title]
+                        let titlesCnt = {}
+                        for (let i of this.activeR1Titles) {
+                            titlesCnt[i] = this.bukets[i].length
+                        }
+                        let n = Object.keys(titlesCnt).reduce((total, cur) => titlesCnt[cur] + total, 0)
                         let r2Duration = duration
-                        // 只剩一个的是否立即结束
-                        if (titles.length == 1) {
+                        // 最大可供抽选的数量刚好为抽选数量时立即结束
+                        if (n <= this.ids.length) {
                             r2Duration = 0
                         }
                         this.flashR2(resolve, r2Duration, 0, 0)
@@ -320,7 +408,22 @@ function initKuji() {
                     this.status = STATUS_SHOW_RESULT
                     //alert(this.r1Title + '-' + this.r2TitleIdx)
                     // 剔除已经抽选的
-                    this.buketsChosen[this.activeR1Title].push(this.bukets[this.activeR1Title].splice(this.activeR2Idx, 1)[0])
+                    let removeBukets = {}
+                    for (let i = 0; i < this.activeR1Titles.length; i++) {
+                        let r1 = this.activeR1Titles[i]
+                        if (r1 in removeBukets) {
+                            removeBukets[r1].push(this.activeR2Idxs[i])
+                            // 降序排序
+                            removeBukets[r1].sort((a, b) => b - a)
+                        } else {
+                            removeBukets[r1] = [this.activeR2Idxs[i]]
+                        }
+                    }
+                    for (let i in removeBukets) {
+                        for (let idx of removeBukets[i]) {
+                            this.buketsChosen[i].push(this.bukets[i].splice(idx, 1)[0])
+                        }
+                    }
                 }).catch((reason) => {
                     alert(reason)
                 })
@@ -336,8 +439,18 @@ function initKuji() {
              */
             flashR1(resolve, titles, duration, cur, frm) {
                 this.status = STATUS_R1_RUNNING
-                this.activeR1Title = titles[Math.floor(Math.random() * titles.length)]
-                this.drawRing()
+                let titlesCnt = {}
+                for (let i of titles) {
+                    titlesCnt[i] = this.bukets[i].length
+                }
+                this.activeR1Titles = []
+                for (let i = 0; i < this.ids.length; i++) {
+                    let activeTitles = Object.keys(titlesCnt).filter((item) => titlesCnt[item] > 0)
+                    let activeTitle = activeTitles[Math.floor(Math.random() * activeTitles.length)]
+                    titlesCnt[activeTitle]--
+                    this.activeR1Titles.push(activeTitle)
+                }
+                this.drawRingAll()
                 if (cur >= duration) {
                     resolve()
                     return
@@ -359,10 +472,18 @@ function initKuji() {
              */
             flashR2(resolve, duration, cur, frm) {
                 this.status = STATUS_R2_RUNNING
-                let titles = this.bukets[this.activeR1Title]
-                this.activeR2Idx = Math.floor(Math.random() * titles.length)
-                this.genR2Styles()
-                this.drawRing()
+                let idxs = {}
+                for (let i of this.activeR1Titles) {
+                    idxs[i] = this.bukets[i].map((item, index) => index)
+                }
+                this.activeR2Idxs = []
+                for (let i = 0; i < this.ids.length; i++) {
+                    let activeIdxs = idxs[this.activeR1Titles[i]]
+                    let idx = Math.floor(Math.random() * activeIdxs.length)
+                    this.activeR2Idxs.push(activeIdxs[idx])
+                    activeIdxs.splice(idx, 1)
+                }
+                this.drawRingAll()
                 if (cur >= duration) {
                     resolve()
                     return
@@ -469,6 +590,9 @@ window.addEventListener('keyup', (event) => {
                 break
             case /^digit[0-9]$/.test(key) && key:
                 // 0-9 切换背景
+                if (kuji.status != STATUS_NORMAL) {
+                    return
+                }
                 let bgIndex = key.substr(-1)
                 kuji.bgIdx = bgIndex
                 break
@@ -479,6 +603,22 @@ window.addEventListener('keyup', (event) => {
                 // 保存已经抽出的列表
                 kuji.saveBukets(EXCLUDE_FILE_PATH, kuji.buketsChosen)
                 alert("当たったやつらを覚えました（笑）")
+                break
+            case /^digit[1-9]$/.test(key) && key:
+                // 1-9 切换礼品个数
+                if (kuji.status != STATUS_NORMAL) {
+                    return
+                }
+                let cnt = key.substr(-1)
+                if (cnt > kuji.getMaxKujiCount()) {
+                    alert("参加者が足りません（涙）")
+                    return
+                }
+                let ids = []
+                for (let i = 1; i <= cnt; i++) {
+                    ids.push('kujiCanvas' + i)
+                }
+                kuji.ids = ids
                 break
         }
     }
