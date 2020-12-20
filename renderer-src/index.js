@@ -107,6 +107,7 @@ function initKuji() {
             activeR1Title: '', //当前内圆标题
             activeR1Titles: [], //所有内圆标题
             activeR2Styles: [], //当前外圆状态
+            activeR2StylesMatrix: [], //所有外圆状态
             activeR2Idx: -1, //当前外圆高亮ID
             activeR2Idxs: [], //所有外圆高亮ID
             bukets: {},
@@ -275,7 +276,7 @@ function initKuji() {
                     this.activeR1Title = this.activeR1Titles[i]
                     if (i < this.activeR2Idxs.length) {
                         this.activeR2Idx = this.activeR2Idxs[i]
-                        this.genR2Styles()
+                        this.activeR2Styles = this.activeR2StylesMatrix[i]
                     }
                     this.drawRing()
                 }
@@ -362,10 +363,12 @@ function initKuji() {
              * 滚动效果
              */
             flash() {
+                this.activeR1Title = ''
                 this.activeR1Titles = []
-                this.activeR2Idxs = []
                 this.activeR2Idx = -1
-                this.genR2Styles()
+                this.activeR2Idxs = []
+                this.activeR2Styles = []
+                this.activeR2StylesMatrix = []
                 let duration = this.intervalFun.duration
                 let flashR1 = new Promise((resolve, reject) => {
 
@@ -477,11 +480,17 @@ function initKuji() {
                     idxs[i] = this.bukets[i].map((item, index) => index)
                 }
                 this.activeR2Idxs = []
+                this.activeR2StylesMatrix = []
                 for (let i = 0; i < this.ids.length; i++) {
                     let activeIdxs = idxs[this.activeR1Titles[i]]
                     let idx = Math.floor(Math.random() * activeIdxs.length)
                     this.activeR2Idxs.push(activeIdxs[idx])
                     activeIdxs.splice(idx, 1)
+                    // 计算外圆状态
+                    this.activeR1Title = this.activeR1Titles[i]
+                    this.activeR2Idx = this.activeR2Idxs[i]
+                    this.genR2Styles()
+                    this.activeR2StylesMatrix.push(this.activeR2Styles)
                 }
                 this.drawRingAll()
                 if (cur >= duration) {
