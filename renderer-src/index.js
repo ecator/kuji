@@ -593,8 +593,14 @@ window.addEventListener('keyup', (event) => {
     if (!event.ctrlKey) {
         switch (key) {
             case 'space':
-            case kuji.optionKey:
                 // 开始抽签
+                runkuji()
+                break
+            case kuji.optionKey:
+                // 非初期状态不允许触发抽签
+                if (kuji.status != STATUS_NORMAL) {
+                    return
+                }
                 runkuji()
                 break
             case /^digit[0-9]$/.test(key) && key:
